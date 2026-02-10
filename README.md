@@ -13,8 +13,14 @@ HiLoForge is a **full‑stack application** that pipelines high‑poly scans int
 
 **Video Demo**
 
-YouTube: https://youtu.be/LP9zZ3jD4C0
-[![HiLoForge Demo](public/exampleHome.png)](https://youtu.be/LP9zZ3jD4C0)
+<p align="left">
+  <a href="https://youtu.be/LP9zZ3jD4C0">
+    <img src="public/exampleHome.png" alt="HiLoForge Demo" width="720" />
+  </a>
+</p>
+
+Example result from the demo asset:
+**64,826 faces → ~5,000 faces (~92% reduction)**
 
 **Before / After (Textures)**
 
