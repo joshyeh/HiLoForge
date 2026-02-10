@@ -12,6 +12,7 @@ HiLoForge is a **full‑stack application** that pipelines high‑poly scans int
 <img src="public/examplePreview.png" alt="examplePreview" width="720" />
 
 **Video Demo**
+
 YouTube: https://youtu.be/LP9zZ3jD4C0
 [![HiLoForge Demo](public/exampleHome.png)](https://youtu.be/LP9zZ3jD4C0)
 
