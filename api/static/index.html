@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Scan2Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <main class="page">
+      <header class="hero">
+        <div class="eyebrow">Scan2Game</div>
+        <h1>Turn high‑poly scans into game‑ready assets in minutes.</h1>
+        <p class="subhead">
+          Upload a GLB/GLTF/FBX and get a decimated mesh with baked textures.
+          Built for throughput, tuned for quality.
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>New Job</h2>
+          <div class="hint">GLB/GLTF/FBX/OBJ/ZIP</div>
+        </div>
+
+        <form id="jobForm" class="form">
+          <label class="file-drop" for="file">
+            <input id="file" name="file" type="file" required />
+            <div class="file-drop-content">
+              <div class="file-title">Drop your asset here</div>
+              <div class="file-sub">or click to browse</div>
+            </div>
+          </label>
+
+          <div class="grid">
+            <label class="field">
+              <span>Target Tris</span>
+              <input id="target_tris" name="target_tris" type="number" value="25000" min="100" step="100" />
+            </label>
+            <label class="field">
+              <span>Texture Size</span>
+              <select id="tex_size" name="tex_size">
+                <option value="1024">1024</option>
+                <option value="2048" selected>2048</option>
+                <option value="4096">4096</option>
+              </select>
+            </label>
+          </div>
+
+          <button class="cta" type="submit">Start Processing</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Status</h2>
+          <div class="hint" id="jobId">No job yet</div>
+        </div>
+        <div class="status">
+          <div class="status-row">
+            <span>State</span>
+            <span id="statusValue" class="pill">Idle</span>
+          </div>
+          <div class="status-row">
+            <span>Queued</span>
+            <span id="queuedAt">—</span>
+          </div>
+          <div class="status-row">
+            <span>Finished</span>
+            <span id="endedAt">—</span>
+          </div>
+          <div class="status-row">
+            <span>Download</span>
+            <a id="downloadLink" class="download disabled" href="#" aria-disabled="true">Not ready</a>
+          </div>
+          <pre id="errorBox" class="error hidden"></pre>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div>API: <code>/jobs</code> <code>/jobs/:id</code> <code>/jobs/:id/download</code></div>
+        <div>Built for fast batch processing.</div>
+      </footer>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

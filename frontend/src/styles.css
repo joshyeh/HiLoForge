@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  background: radial-gradient(1200px 800px at 15% 10%, #152033 0%, transparent 65%),
+    radial-gradient(1000px 600px at 85% 5%, #15292b 0%, transparent 60%),
+    linear-gradient(160deg, #0a0e13 0%, #0b1118 40%, #0b0f14 100%);
+}

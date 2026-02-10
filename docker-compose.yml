@@ -1,0 +1,40 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: ./api
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATA_DIR: /data
+    volumes:
+      - ./data:/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: http://localhost:8000
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+  worker:
+    build: ./worker
+    volumes:
+      - ./data:/data
+    depends_on:
+      - redis
+    gpus: all
+    runtime: nvidia
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATA_DIR: /data
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
