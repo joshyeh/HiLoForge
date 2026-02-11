@@ -187,3 +187,26 @@ def download_preview(job_id: str, which: str):
         filename=preview_path.name,
         media_type="image/png",
     )
+
+
+@app.get("/jobs/{job_id}/model")
+def download_model(job_id: str):
+    model_path = OUTPUTS_DIR / job_id / "model_low.glb"
+    if not model_path.exists():
+        # Allow passing the RQ job id; map to output_id if available.
+        try:
+            rq_job = Job.fetch(job_id, connection=redis_conn)
+            meta = dict(rq_job.meta) if rq_job.meta else {}
+            output_id = meta.get("output_id") or meta.get("job_id")
+            if output_id:
+                model_path = OUTPUTS_DIR / output_id / "model_low.glb"
+        except Exception:
+            pass
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    return FileResponse(
+        path=model_path,
+        filename=model_path.name,
+        media_type="model/gltf-binary",
+    )

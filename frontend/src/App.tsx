@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { Component, type ReactNode, Suspense, useEffect, useMemo, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 
 type JobStatus = {
   job_id: string;
@@ -19,6 +21,48 @@ function getHashRoute() {
   return { path, params };
 }
 
+
+function ModelScene({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  return <primitive object={scene} />;
+}
+
+type ViewerErrorBoundaryProps = {
+  fallback: ReactNode;
+  children?: ReactNode;
+};
+
+class ViewerErrorBoundary extends Component<
+  ViewerErrorBoundaryProps,
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+function ModelViewer({ url }: { url: string }) {
+  return (
+    <Canvas camera={{ position: [0, 1.6, 3.2], fov: 45 }}>
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[4, 6, 3]} intensity={1.1} />
+      <Suspense fallback={null}>
+        <ModelScene url={url} />
+        <Environment preset="city" />
+      </Suspense>
+      <OrbitControls makeDefault enableDamping />
+    </Canvas>
+  );
+}
 async function fetchStatus(jobId: string): Promise<JobStatus> {
   const res = await fetch(`${API_BASE}/jobs/${jobId}`);
   if (!res.ok) {
@@ -38,6 +82,17 @@ export default function App() {
   const [route, setRoute] = useState(() => getHashRoute());
   const [selectedFile, setSelectedFile] = useState<string>("No file selected");
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [localModelUrl, setLocalModelUrl] = useState<string | null>(null);
+
+  const clearLocalModelPreview = () => {
+    setLocalModelUrl((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return null;
+    });
+  };
+
 
   const downloadUrl = useMemo(() => {
     if (!rqJobId || status !== "finished") {
@@ -54,12 +109,29 @@ export default function App() {
   const compareAfter = compareJobId
     ? `${API_BASE}/jobs/${compareJobId}/preview/after`
     : null;
+  const modelUrl = jobId ? `${API_BASE}/jobs/${jobId}/model` : null;
+  const selectedExt = selectedFile.includes(".")
+    ? selectedFile.toLowerCase().split(".").pop()
+    : "";
+  const canPreviewLocal = selectedExt === "glb" || selectedExt === "gltf";
+  const homePreviewUrl = localModelUrl ?? (status === "finished" ? modelUrl : null);
+  const compareModelUrl = compareJobId
+    ? `${API_BASE}/jobs/${compareJobId}/model`
+    : null;
 
   useEffect(() => {
     const onHashChange = () => setRoute(getHashRoute());
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (localModelUrl) {
+        URL.revokeObjectURL(localModelUrl);
+      }
+    };
+  }, [localModelUrl]);
 
   const pollJob = async (jobIdValue: string) => {
     setPolling(true);
@@ -83,6 +155,7 @@ export default function App() {
           active = false;
           setPolling(false);
           setSelectedFile("No file selected");
+          clearLocalModelPreview();
           setFileInputKey((prev) => prev + 1);
           return;
         }
@@ -193,6 +266,32 @@ export default function App() {
                 </div>
               )}
             </div>
+            
+          </section>
+          <section className="rounded-2xl border border-panelBorder bg-panel/80 p-6 shadow-panel backdrop-blur">
+            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-xl font-semibold">3D Preview</h2>
+              <span className="font-mono text-xs text-muted">{compareJobId || "No job"}</span>
+            </div>
+
+            {compareModelUrl ? (
+              <div className="h-[420px] w-full overflow-hidden rounded-2xl border border-slate-800/70 bg-slate-950/60">
+                <ViewerErrorBoundary
+                  key={compareModelUrl}
+                  fallback={
+                    <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted">
+                      3D preview failed to load. The model file might be missing or the endpoint returned an error.
+                    </div>
+                  }
+                >
+                  <ModelViewer url={compareModelUrl} />
+                </ViewerErrorBoundary>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-700/60 p-10 text-center text-sm text-muted">
+                3D preview will appear after processing finishes.
+              </div>
+            )}
           </section>
         </main>
       </div>
@@ -230,6 +329,14 @@ export default function App() {
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0];
                   setSelectedFile(file ? file.name : "No file selected");
+                  clearLocalModelPreview();
+                  if (!file) {
+                    return;
+                  }
+                  const ext = file.name.toLowerCase().split(".").pop() || "";
+                  if (ext === "glb" || ext === "gltf") {
+                    setLocalModelUrl(URL.createObjectURL(file));
+                  }
                 }}
               />
               <span className="text-lg font-medium">Drop your asset here</span>
@@ -360,6 +467,33 @@ export default function App() {
               {polling ? "Processing..." : "Start Processing"}
             </button>
           </form>
+        </section>
+        <section className="rounded-2xl border border-panelBorder bg-panel/80 p-6 shadow-panel backdrop-blur">
+          <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-semibold">3D Preview</h2>
+            <span className="font-mono text-xs text-muted">{jobId || "No job yet"}</span>
+          </div>
+
+          {homePreviewUrl ? (
+            <div className="h-[420px] w-full overflow-hidden rounded-2xl border border-slate-800/70 bg-slate-950/60">
+              <ViewerErrorBoundary
+                key={homePreviewUrl}
+                fallback={
+                  <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted">
+                    3D preview failed to load. The model file might be missing or the endpoint returned an error.
+                  </div>
+                }
+              >
+                <ModelViewer url={homePreviewUrl} />
+              </ViewerErrorBoundary>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-700/60 p-10 text-center text-sm text-muted">
+              {canPreviewLocal
+                ? "Select a GLB/GLTF file to preview it before processing."
+                : "Local 3D preview is available for GLB/GLTF. Other formats will preview after processing."}
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl border border-panelBorder bg-panel/80 p-6 shadow-panel backdrop-blur">
